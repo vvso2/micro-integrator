@@ -1,0 +1,409 @@
+--- repository/resources/conf/templates/conf/carbon.xml.j2
++++ repository/resources/conf/templates/conf/carbon.xml.j2
+@@ -346,7 +346,7 @@
+         -->
+         <KeyStore>
+             <!-- Keystore file location-->
+-            <Location>${carbon.home}/repository/resources/security/{{keystore.primary.file_name}}</Location>
++            <Location>{{keystore.primary.file_name}}</Location>
+             <!-- Keystore type (JKS/PKCS12 etc.)-->
+             <Type>{{keystore.primary.type}}</Type>
+             <!-- Keystore password-->
+@@ -363,15 +363,15 @@
+         -->
+         <InternalKeyStore>
+             <!-- Keystore file location-->
+-            <Location>${carbon.home}/repository/resources/security/wso2carbon.jks</Location>
++            <Location>{{keystore.internal.file_name}}</Location>
+             <!-- Keystore type (JKS/PKCS12 etc.)-->
+-            <Type>JKS</Type>
++            <Type>{{keystore.internal.type}}</Type>
+             <!-- Keystore password-->
+-            <Password>wso2carbon</Password>
++            <Password>{{keystore.internal.password}}</Password>
+             <!-- Private Key alias-->
+-            <KeyAlias>wso2carbon</KeyAlias>
++            <KeyAlias>{{keystore.internal.alias}}</KeyAlias>
+             <!-- Private Key password-->
+-            <KeyPassword>wso2carbon</KeyPassword>
++            <KeyPassword>{{keystore.internal.key_password}}</KeyPassword>
+         </InternalKeyStore>
+
+         <!--
+@@ -380,7 +380,7 @@
+         -->
+         <TrustStore>
+             <!-- trust-store file location -->
+-            <Location>${carbon.home}/repository/resources/security/{{truststore.file_name}}</Location>
++            <Location>{{truststore.file_name}}</Location>
+             <!-- trust-store type (JKS/PKCS12 etc.) -->
+             <Type>{{truststore.type}}</Type>
+             <!-- trust-store password -->
+
+--- conf/deployment.toml
++++ conf/deployment.toml
+@@ -5,14 +5,14 @@
+ [user_store]
+ type = "read_only_ldap"
+
+-[keystore.tls]
+-file_name = "wso2carbon.jks"
++[keystore.primary]
++file_name = "repository/resources/security/wso2carbon.jks"
+ password = "wso2carbon"
+ alias = "wso2carbon"
+ key_password = "wso2carbon"
+
+ [truststore]
+-file_name = "client-truststore.jks"
++file_name = "repository/resources/security/client-truststore.jks"
+ password = "wso2carbon"
+ alias = "symmetric.key.value"
+ algorithm = "AES"
+@@ -26,6 +26,7 @@
+
+ # [transport.jms]
+ # sender_enable = true
++# listener_enable = true
+
+ # [[transport.jms.sender]]
+ # name = "myQueueSender"
+@@ -34,9 +35,6 @@
+ # parameter.connection_factory_name = "QueueConnectionFactory"
+ # parameter.connection_factory_type = "queue"
+ # parameter.cache_level = "producer"
+-
+-# [transport.jms]
+-# listener_enable = true
+
+ #[[transport.jms.listener]]
+ # name = "myQueueConnectionFactory"
+@@ -57,6 +55,7 @@
+
+ # [transport.rabbitmq]
+ # sender_enable = true
++# listener_enable = true
+
+ # [[transport.rabbitmq.sender]]
+ # name = "AMQPConnectionFactory"
+@@ -64,9 +63,6 @@
+ # parameter.port = 5672
+ # parameter.username = "guest"
+ # parameter.password = "guest"
+-
+-# [transport.rabbitmq]
+-# listener_enable = true
+
+ # [[transport.rabbitmq.listener]]
+ # name = "AMQPConnectionFactory"
+
+--- repository/resources/conf/default.json
++++ repository/resources/conf/default.json
+@@ -74,11 +74,11 @@
+   "transport.https.listener.parameter.HttpsProtocols": "TLSv1,TLSv1.1,TLSv1.2",
+   "transport.https.listener.parameter.httpGetProcessor": "org.wso2.micro.integrator.transport.handlers.PassThroughNHttpGetProcessor",
+   "transport.http.listener.ssl_profile.read_interval": "3600000",
+-  "transport.http.listener.keystore.location": "repository/resources/security/$ref{keystore.primary.file_name}",
++  "transport.http.listener.keystore.location": "$ref{keystore.primary.file_name}",
+   "transport.http.listener.keystore.type": "$ref{keystore.primary.type}",
+   "transport.http.listener.keystore.password": "$ref{keystore.primary.password}",
+   "transport.http.listener.keystore.key_password": "$ref{keystore.primary.key_password}",
+-  "transport.http.listener.truststore.location": "repository/resources/security/$ref{truststore.file_name}",
++  "transport.http.listener.truststore.location": "$ref{truststore.file_name}",
+   "transport.http.listener.truststore.type": "$ref{truststore.type}",
+   "transport.http.listener.truststore.password": "$ref{truststore.password}",
+
+@@ -86,11 +86,11 @@
+   "transport.http.sender.class": "org.apache.synapse.transport.passthru.PassThroughHttpSender",
+   "transport.http.sender.secured_enable": true,
+   "transport.https.sender.class": "org.apache.synapse.transport.passthru.PassThroughHttpSSLSender",
+-  "transport.http.sender.keystore.location": "repository/resources/security/$ref{keystore.primary.file_name}",
++  "transport.http.sender.keystore.location": "$ref{keystore.primary.file_name}",
+   "transport.http.sender.keystore.type": "$ref{keystore.primary.type}",
+   "transport.http.sender.keystore.password": "$ref{keystore.primary.password}",
+   "transport.http.sender.keystore.key_password": "$ref{keystore.primary.key_password}",
+-  "transport.http.sender.truststore.location": "repository/resources/security/$ref{truststore.file_name}",
++  "transport.http.sender.truststore.location": "$ref{truststore.file_name}",
+   "transport.http.sender.truststore.type": "$ref{truststore.type}",
+   "transport.http.sender.truststore.password": "$ref{truststore.password}",
+   "transport.http.sender.ssl_profile.read_interval": "600000",
+@@ -113,7 +113,7 @@
+   "transport.blocking.https.sender.parameter.SO_TIMEOUT": "60000",
+
+   "transport.vfs.listener.enable": true,
+-  "transport.vfs.listener.keystore.location": "repository/resources/security/$ref{keystore.primary.file_name}",
++  "transport.vfs.listener.keystore.location": "$ref{keystore.primary.file_name}",
+   "transport.vfs.listener.keystore.type": "$ref{keystore.primary.type}",
+   "transport.vfs.listener.keystore.password": "$ref{keystore.primary.password}",
+   "transport.vfs.listener.keystore.key_password": "$ref{keystore.primary.key_password}",
+@@ -387,17 +387,22 @@
+   "blocking.message_builders.octet_stream": "org.wso2.carbon.relay.BinaryRelayBuilder",
+   "blocking.message_builders.application_binary": "org.apache.axis2.format.BinaryBuilder",
+
+-  "keystore.primary.file_name": "wso2carbon.jks",
++  "keystore.primary.file_name": "repository/resources/security/wso2carbon.jks",
+   "keystore.primary.type": "JKS",
+   "keystore.primary.password": "wso2carbon",
+   "keystore.primary.alias": "wso2carbon",
+   "keystore.primary.key_password": "wso2carbon",
+-  "truststore.file_name": "client-truststore.jks",
++  "truststore.file_name": "repository/resources/security/client-truststore.jks",
+   "truststore.type": "JKS",
+   "truststore.password": "wso2carbon",
+   "encryption.type": "asymmetric",
+   "encryption.algorithm": "AES",
+   "encryption.alias": "symmetric.key.value",
++  "keystore.internal.file_name": "$ref{keystore.primary.file_name}",
++  "keystore.internal.type": "$ref{keystore.primary.type}",
++  "keystore.internal.password": "$ref{keystore.primary.password}",
++  "keystore.internal.alias": "$ref{keystore.primary.alias}",
++  "keystore.internal.key_password": "$ref{keystore.primary.key_password}",
+
+   "database.enable_config": true,
+   "database.enable_gov": true,
+@@ -444,13 +449,13 @@
+   "internal_api_ssl_config.parameter.sslVerifyClient": "false",
+   "internal_api_ssl_config.parameter.httpsProtocols": "TLSv1,TLSv1.1,TLSv1.2",
+   "internal_api_ssl_config.parameter.sslProtocol": "SSLV3",
+-  "internal_api_ssl_config.key_store.location": "repository/resources/security/wso2carbon.jks",
+-  "internal_api_ssl_config.key_store.type": "JKS",
+-  "internal_api_ssl_config.key_store.password": "wso2carbon",
+-  "internal_api_ssl_config.key_store.key_password": "wso2carbon",
+-  "internal_api_ssl_config.trust_store.location": "repository/resources/security/client-truststore.jks",
+-  "internal_api_ssl_config.trust_store.type": "JKS",
+-  "internal_api_ssl_config.trust_store.password": "wso2carbon",
++  "internal_api_ssl_config.key_store.location": "$ref{keystore.primary.file_name}",
++  "internal_api_ssl_config.key_store.type": "$ref{keystore.primary.type}",
++  "internal_api_ssl_config.key_store.password": "$ref{keystore.primary.password}",
++  "internal_api_ssl_config.key_store.key_password": "$ref{keystore.primary.key_password}",
++  "internal_api_ssl_config.trust_store.location": "$ref{truststore.file_name}",
++  "internal_api_ssl_config.trust_store.type": "$ref{truststore.type}",
++  "internal_api_ssl_config.trust_store.password": "$ref{truststore.password}",
+   "internal_api_ssl_config.certificate_revocation_verifier_enabled": "false",
+   "internal_api_ssl_config.certificate_revocation_verifier": {
+     "cache_size": "10",
+
+--- repository/resources/conf/deployment-full.toml
++++ repository/resources/conf/deployment-full.toml
+@@ -394,6 +394,7 @@
+
+ [transport.jms]
+ listener_enable = true
++sender_enable = true
+
+ [[transport.jms.listener]]
+
+@@ -436,9 +437,6 @@
+ parameter.max_consumer_error_retrieve_before_delay = 20
+ parameter.consume_error_delay = "100"                   # delay in milliseconds
+ parameter.consume_error_progression = "2.0"
+-
+-[transport.jms]
+-sender_enable = true
+
+ [[transport.jms.sender]]
+
+@@ -485,6 +483,7 @@
+
+ [transport.blocking.jms]
+ listener_enable = true
++sender_enable = true
+
+ [[transport.blocking.jms.listener]]     # jms listener for blocking transport
+
+@@ -528,8 +527,6 @@
+ parameter.consume_error_delay = "100"                   # delay in milliseconds
+ parameter.consume_error_progression = "2.0"
+
+-[transport.blocking.jms]
+-sender_enable = true
+
+ [[transport.blocking.jms.sender]]   # jms sender for blocking transport
+
+@@ -589,6 +586,7 @@
+ ###################################     Rabbit MQ configurations        ###################################
+ [transport.rabbitmq]
+ listener_enable = true
++sender_enable = true
+
+ [[transport.rabbitmq.listener]]
+
+@@ -626,11 +624,32 @@
+ parameter.truststore_location =""
+ parameter.truststore_type = ""
+ parameter.truststore_password = ""
+-
+-[transport.rabbitmq]
+-sender_enable = true
+
+ [[transport.rabbitmq.sender]]
++
++name = "AMQPConnectionFactory"
++parameter.hostname = "localhost"
++parameter.port = 5672
++parameter.username = "guest"
++parameter.password = "guest"
++parameter.exchange_name = "amq.direct"
++parameter.routing_key = "MyQueue"
++parameter.reply_to_name = ""
++parameter.queue_delivery_mode = 1 # 1/2
++parameter.exchange_type = ""
++parameter.queue_name = "MyQueue"
++parameter.queue_durable = false
++parameter.queue_exclusive = false
++parameter.queue_auto_delete = false
++parameter.exchange_durable = ""
++parameter.queue_auto_declare = ""
++parameter.exchange_auto_declare = ""
++parameter.connection_pool_size = 10
++
++[transport.blocking.rabbitmq]     # RabbitMQ blocking transport
++sender_enable = false
++
++[[transport.blocking.rabbitmq.sender]]
+
+ name = "AMQPConnectionFactory"
+ parameter.hostname = "localhost"
+@@ -650,6 +669,45 @@
+ parameter.queue_auto_declare = ""
+ parameter.exchange_auto_declare = ""
+ parameter.connection_pool_size = 10
++
++[transport.blocking.rabbitmq]
++listener_enable = true
++
++[[transport.blocking.rabbitmq.listener]]
++
++name = "AMQPConnectionFactory"
++parameter.hostname = "localhost"
++parameter.port = 5672
++parameter.username = "guest"
++parameter.password = "guest"
++parameter.connection_factory = ""
++parameter.exchange_name = "amq.direct"
++parameter.queue_name = "MyQueue"
++parameter.queue_auto_ack = false
++parameter.consumer_tag = ""
++parameter.channel_consumer_qos = ""
++parameter.durable = ""
++parameter.queue_exclusive = ""
++parameter.queue_auto_delete = ""
++parameter.queue_routing_key = ""
++parameter.queue_auto_declare = ""
++parameter.exchange_auto_declare = ""
++parameter.exchange_type = ""
++parameter.exchange_durable = ""
++parameter.exchange_auto_delete = ""
++parameter.message_content_type = ""
++
++parameter.retry_interval = "10000"        #in case of network failure interval in milliseconds
++parameter.retry_count = 5               #in case of network failure
++parameter.connection_pool_size = 25
++
++parameter.ssl_enable = true
++parameter.ssl_version = "SSL"
++parameter.keystore_location =""
++parameter.keystore_type = ""
++parameter.keystore_password = ""
++parameter.truststore_location =""
++parameter.truststore_type = ""
+
+ ################################### Websocket transport configuration ###################################
+ [transport.ws]
+@@ -849,14 +907,14 @@
+
+ ###################################     Keystore configurations     ###################################
+ [keystore.primary]
+-file_name = "wso2carbon.jks"        # infered
++file_name = "repository/resources/security/wso2carbon.jks"        # infered
+ type = "JKS"                        # infered
+ password = "wso2carbon"             # infered
+ alias = "wso2carbon"                # infered
+ key_password = "wso2carbon"         # infered
+
+ [truststore]
+-file_name = "client-truststore.jks"        # infered
++file_name = "repository/resources/security/client-truststore.jks"        # infered
+ type = "JKS"                        # infered
+ password = "wso2carbon"             # infered
+ alias = "symmetric.key.value"       # infered
+
+--- repository/resources/conf/infer.json
++++ repository/resources/conf/infer.json
+@@ -154,7 +154,7 @@
+       "transport.wss.sender.parameter.'ws.outflow.dispatch.sequence'": "outflowDispatchSeq",
+       "transport.wss.sender.parameter.'ws.outflow.dispatch.fault.sequence'": "outflowFaultSeq",
+       "transport.wss.sender.truststore_location": "$ref{truststore.file_name}",
+-      "transport.wss.sender.truststore_password": "$ref{truststore.primary.password}"
++      "transport.wss.sender.truststore_password": "$ref{truststore.password}"
+     }
+   },
+   "transport.http.listener.certificate_revocation_verifier_enable": {
+
+--- repository/resources/conf/templates/conf/axis2/axis2_blocking_client.xml.j2
++++ repository/resources/conf/templates/conf/axis2/axis2_blocking_client.xml.j2
+@@ -253,6 +253,31 @@
+         {% endfor %}
+     </transportReceiver>
+     {% endif %}
++    {% if transport.blocking.rabbitmq.listener_enable is defined %}
++        {% if transport.blocking.rabbitmq.listener_enable and transport.blocking.rabbitmq.listener|length==0 %}
++    <transportReceiver name="rabbitmq" class="org.apache.axis2.transport.rabbitmq.RabbitMQListener"/>
++        {% elif transport.blocking.rabbitmq.listener_enable %}
++    <transportReceiver name="rabbitmq" class="org.apache.axis2.transport.rabbitmq.RabbitMQListener">
++            {% for listener in transport.blocking.rabbitmq.listener %}
++        <parameter name="{{listener.name}}" locked="false">
++                {% for name,value in listener.parameter.items() %}
++            <parameter name="{{name}}" locked="false">{{value}}</parameter>
++                {% endfor %}
++        </parameter>
++            {% endfor %}
++    </transportReceiver>
++        {% endif %}
++    {% elif transport.blocking.rabbitmq.listener|length>0 %}
++    <transportReceiver name="rabbitmq" class="org.apache.axis2.transport.rabbitmq.RabbitMQListener">
++        {% for listener in transport.blocking.rabbitmq.listener %}
++        <parameter name="{{listener.name}}" locked="false">
++            {% for name,value in listener.parameter.items() %}
++            <parameter name="{{name}}" locked="false">{{value}}</parameter>
++            {% endfor %}
++        </parameter>
++        {% endfor %}
++    </transportReceiver>
++    {% endif %}
+ 	<!--Uncomment if you want to have TCP transport support-->
+     <!--transportReceiver name="tcp"
+                        class="org.apache.axis2.transport.tcp.TCPServer">
+@@ -355,6 +380,31 @@
+         {% endfor %}
+     </transportSender>
+     {% endif %}
++    {% if transport.blocking.rabbitmq.sender_enable is defined %}
++           {% if transport.blocking.rabbitmq.sender_enable and transport.blocking.rabbitmq.sender|length==0 %}
++       <transportSender name="rabbitmq" class="org.apache.axis2.transport.rabbitmq.RabbitMQSender"/>
++           {% elif transport.blocking.rabbitmq.sender_enable %}
++       <transportSender name="rabbitmq" class="org.apache.axis2.transport.rabbitmq.RabbitMQSender">
++               {% for sender in transport.blocking.rabbitmq.sender %}
++           <parameter name="{{sender.name}}" locked="false">
++                   {% for name,value in sender.parameter.items() %}
++               <parameter name="{{name}}" locked="false">{{value}}</parameter>
++                   {% endfor %}
++           </parameter>
++               {% endfor %}
++       </transportSender>
++           {% endif %}
++       {% elif transport.blocking.rabbitmq.sender|length>0 %}
++       <transportSender name="rabbitmq" class="org.apache.axis2.transport.rabbitmq.RabbitMQSender">
++           {% for sender in transport.blocking.rabbitmq.sender %}
++           <parameter name="{{sender.name}}" locked="false">
++               {% for name,value in sender.parameter.items() %}
++               <parameter name="{{name}}" locked="false">{{value}}</parameter>
++               {% endfor %}
++           </parameter>
++           {% endfor %}
++       </transportSender>
++       {% endif %}
+     <!-- ================================================= -->
+     <!-- Global Modules  -->
+     <!-- ================================================= -->
+
